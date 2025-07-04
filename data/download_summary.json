@@ -1,0 +1,17 @@
+{
+  "downloadDate": "2025-07-03T13:47:28.801830",
+  "symbols": [
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY"
+  ],
+  "period": {
+    "start": "2024-01-02T00:00:00",
+    "end": "2024-01-02T23:59:59"
+  },
+  "timeframe": "tick",
+  "totalRecords": 47063,
+  "totalFiles": 3,
+  "dataType": "sample_generated",
+  "note": "This is sample data generated for testing purposes"
+}

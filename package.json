@@ -1,0 +1,27 @@
+{
+  "name": "backtester-data-fetcher",
+  "version": "1.0.0",
+  "description": "Data fetching tools for the backtesting framework",
+  "main": "index.js",
+  "scripts": {
+    "fetch-data": "node scripts/fetch_data.js",
+    "fetch-single": "node scripts/fetch_single_pair.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "forex",
+    "backtesting",
+    "dukascopy",
+    "tick-data"
+  ],
+  "author": "Backtesting Framework",
+  "license": "MIT",
+  "dependencies": {
+    "dukascopy-node": "^1.43.0",
+    "commander": "^11.0.0",
+    "fs-extra": "^11.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

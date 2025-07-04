@@ -14,7 +14,7 @@ from core.data_structures import (
     Tick, Order, Position, Trade, BacktestConfig, BacktestResult,
     OrderType, OrderSide, MarketEvent
 )
-from data.dukascopy_loader import DukascopyDataLoader
+from data.data_loader_factory import DataLoaderFactory
 from execution.order_manager import OrderManager
 from execution.position_manager import PositionManager
 from strategy.strategy_interface import TradingStrategy, StrategySignal
@@ -29,19 +29,20 @@ class BacktestEngine:
     Provides precise execution modeling and comprehensive performance analysis.
     """
     
-    def __init__(self, config: BacktestConfig, data_path: str):
+    def __init__(self, config: BacktestConfig, data_path: str, data_format: str = None):
         """
         Initialize the backtesting engine.
         
         Args:
             config: Backtesting configuration
-            data_path: Path to Dukascopy data directory
+            data_path: Path to data directory (supports both .bi5 and CSV)
+            data_format: Force data format ('bi5' or 'csv'), auto-detect if None
         """
         self.config = config
         self.data_path = data_path
         
-        # Initialize components
-        self.data_loader = DukascopyDataLoader(data_path, config)
+        # Initialize components with auto-detecting data loader
+        self.data_loader = DataLoaderFactory.create_loader(data_path, config, data_format)
         self.order_manager = OrderManager(config)
         self.position_manager = PositionManager(config, config.initial_balance)
         
