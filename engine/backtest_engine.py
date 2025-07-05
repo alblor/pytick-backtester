@@ -217,10 +217,17 @@ class BacktestEngine:
             # Generate signals
             signals = strategy.on_tick(tick)
             
+            if signals:
+                logger.debug(f"🎯 Strategy '{strategy.config.name}' generated {len(signals)} signals at {tick.timestamp}")
+            
             # Process signals
             for signal in signals:
+                logger.debug(f"🔍 Validating signal: {signal.signal_type} {signal.symbol}")
                 if strategy.validate_signal(signal):
+                    logger.debug(f"✅ Signal validation passed, processing...")
                     self._process_strategy_signal(signal)
+                else:
+                    logger.debug(f"❌ Signal validation failed, skipping...")
         
         # Create market event
         event = MarketEvent(
@@ -242,8 +249,11 @@ class BacktestEngine:
         Args:
             signal: Trading signal to process
         """
+        logger.info(f"🔄 Processing signal: {signal.signal_type} {signal.symbol} qty={signal.quantity} strength={signal.strength}")
+        
         try:
             if signal.signal_type == 'BUY':
+                logger.info(f"📈 Creating BUY order: {signal.symbol} qty={signal.quantity} SL={signal.stop_loss} TP={signal.take_profit}")
                 order = self.order_manager.create_order(
                     symbol=signal.symbol,
                     side=OrderSide.BUY,
@@ -253,8 +263,10 @@ class BacktestEngine:
                     take_profit=signal.take_profit
                 )
                 self.execution_stats['orders_created'] += 1
+                logger.info(f"✅ BUY order created: {order.id}")
                 
             elif signal.signal_type == 'SELL':
+                logger.info(f"📉 Creating SELL order: {signal.symbol} qty={signal.quantity} SL={signal.stop_loss} TP={signal.take_profit}")
                 order = self.order_manager.create_order(
                     symbol=signal.symbol,
                     side=OrderSide.SELL,
@@ -264,6 +276,7 @@ class BacktestEngine:
                     take_profit=signal.take_profit
                 )
                 self.execution_stats['orders_created'] += 1
+                logger.info(f"✅ SELL order created: {order.id}")
                 
             elif signal.signal_type == 'CLOSE':
                 # Close existing position
@@ -272,6 +285,7 @@ class BacktestEngine:
                     close_side = OrderSide.SELL if position.is_long else OrderSide.BUY
                     close_quantity = abs(position.quantity)
                     
+                    logger.info(f"🔄 Creating CLOSE order: {signal.symbol} qty={close_quantity} side={close_side.value}")
                     order = self.order_manager.create_order(
                         symbol=signal.symbol,
                         side=close_side,
@@ -279,9 +293,13 @@ class BacktestEngine:
                         quantity=close_quantity
                     )
                     self.execution_stats['orders_created'] += 1
+                    logger.info(f"✅ CLOSE order created: {order.id}")
+                else:
+                    logger.warning(f"⚠️ No position to close for {signal.symbol}")
                     
         except Exception as e:
-            logger.error(f"Error processing signal: {e}")
+            logger.error(f"❌ Error processing signal: {e}")
+            logger.error(f"Signal details: {signal}")
     
     def _handle_order_filled(self, order: Order) -> None:
         """Handle order fill events."""

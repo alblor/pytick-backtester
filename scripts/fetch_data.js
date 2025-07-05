@@ -93,11 +93,39 @@ function formatTickDataToCSV(data, symbol) {
   const headers = 'timestamp,symbol,bid,ask,bid_volume,ask_volume\n';
   
   const rows = data.map(tick => {
-    const timestamp = new Date(tick.timestamp).toISOString();
-    const bid = tick.bid || tick.low || tick.close;
-    const ask = tick.ask || tick.high || tick.close;
-    const bidVolume = tick.bidVolume || 0;
-    const askVolume = tick.askVolume || 0;
+    // Handle dukascopy-node array format: [timestamp, bid, ask, bidVolume, askVolume]
+    let timestamp, bid, ask, bidVolume, askVolume;
+    
+    if (Array.isArray(tick)) {
+      // Array format from dukascopy-node: [timestamp, ask, bid, askVolume, bidVolume]
+      // Note: dukascopy returns ask first (higher price), then bid (lower price)
+      timestamp = new Date(tick[0]).toISOString();
+      bid = tick[2];    // bid is the lower price
+      ask = tick[1];    // ask is the higher price  
+      bidVolume = tick[4] || 0;   // bid volume
+      askVolume = tick[3] || 0;   // ask volume
+    } else {
+      // Object format (fallback)
+      timestamp = new Date(tick.timestamp).toISOString();
+      
+      // For tick data, we need to handle different data structures
+      if (tick.bid !== undefined && tick.ask !== undefined) {
+        bid = tick.bid;
+        ask = tick.ask;
+      } else if (tick.close !== undefined) {
+        // If we only have close price, estimate bid/ask with a small spread
+        const spread = tick.close * 0.0001; // 1 pip spread estimate
+        bid = tick.close - spread / 2;
+        ask = tick.close + spread / 2;
+      } else {
+        // Fallback
+        bid = tick.low || tick.open || tick.close;
+        ask = tick.high || tick.open || tick.close;
+      }
+      
+      bidVolume = tick.bidVolume || tick.volume || 0;
+      askVolume = tick.askVolume || tick.volume || 0;
+    }
     
     return `${timestamp},${symbol.toUpperCase()},${bid},${ask},${bidVolume},${askVolume}`;
   }).join('\n');
@@ -165,20 +193,28 @@ async function downloadSymbolData(symbol, startDate, endDate) {
     const fileName = `${symbol.toUpperCase()}_${startDate.toISOString().split('T')[0]}_${endDate.toISOString().split('T')[0]}_${timeframe}.csv`;
     const filePath = path.join(outputDir, symbol.toUpperCase(), fileName);
     
+    // Ensure directory exists before writing
+    await fs.ensureDir(path.dirname(filePath));
+    
     await fs.writeFile(filePath, csvData);
     console.log(`💾 Saved: ${filePath}`);
+    
+    // Verify file was created
+    const stats = await fs.stat(filePath);
+    console.log(`📏 File size: ${(stats.size / 1024).toFixed(2)} KB`);
     
     return {
       symbol: symbol.toUpperCase(),
       records: data.length,
       file: filePath,
-      size: (await fs.stat(filePath)).size
+      size: stats.size
     };
     
   } catch (error) {
     console.error(`❌ Error downloading ${symbol.toUpperCase()}: ${error.message}`);
     if (options.verbose) {
       console.error(error);
+      console.error('Stack trace:', error.stack);
     }
     return null;
   }

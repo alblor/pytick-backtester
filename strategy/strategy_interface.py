@@ -303,26 +303,38 @@ class TradingStrategy(ABC):
         Returns:
             True if signal is valid
         """
-        # Check signal strength
-        if signal.strength < 0.1:
+        # Check signal strength (more lenient threshold)
+        if signal.strength < 0.05:
+            logger.warning(f"Signal rejected: strength too low ({signal.strength})")
             return False
         
         # Check quantity
         if signal.quantity and signal.quantity <= 0:
+            logger.warning(f"Signal rejected: invalid quantity ({signal.quantity})")
+            return False
+        
+        # Check required price for market signals
+        if signal.signal_type in ['BUY', 'SELL'] and not signal.price:
+            logger.warning(f"Signal rejected: missing price for {signal.signal_type}")
             return False
         
         # Check stop loss and take profit levels
         if signal.signal_type == 'BUY':
-            if signal.stop_loss and signal.stop_loss >= signal.price:
+            if signal.stop_loss and signal.price and signal.stop_loss >= signal.price:
+                logger.warning(f"Signal rejected: BUY stop loss ({signal.stop_loss}) >= entry price ({signal.price})")
                 return False
-            if signal.take_profit and signal.take_profit <= signal.price:
+            if signal.take_profit and signal.price and signal.take_profit <= signal.price:
+                logger.warning(f"Signal rejected: BUY take profit ({signal.take_profit}) <= entry price ({signal.price})")
                 return False
         elif signal.signal_type == 'SELL':
-            if signal.stop_loss and signal.stop_loss <= signal.price:
+            if signal.stop_loss and signal.price and signal.stop_loss <= signal.price:
+                logger.warning(f"Signal rejected: SELL stop loss ({signal.stop_loss}) <= entry price ({signal.price})")
                 return False
-            if signal.take_profit and signal.take_profit >= signal.price:
+            if signal.take_profit and signal.price and signal.take_profit >= signal.price:
+                logger.warning(f"Signal rejected: SELL take profit ({signal.take_profit}) >= entry price ({signal.price})")
                 return False
         
+        logger.info(f"✅ Signal validated: {signal.signal_type} {signal.symbol} at {signal.price:.5f}")
         return True
     
     def get_performance_metrics(self) -> Dict[str, float]:

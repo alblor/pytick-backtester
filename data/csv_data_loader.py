@@ -147,7 +147,6 @@ class CSVDataLoader:
             # Load CSV with proper data types
             df = pd.read_csv(
                 file_path,
-                parse_dates=['timestamp'],
                 dtype={
                     'symbol': 'string',
                     'bid': 'float64',
@@ -156,6 +155,9 @@ class CSVDataLoader:
                     'ask_volume': 'float64'
                 }
             )
+            
+            # Parse timestamps properly with UTC timezone
+            df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
             
             # Ensure required columns exist
             required_columns = ['timestamp', 'symbol', 'bid', 'ask']
@@ -206,8 +208,12 @@ class CSVDataLoader:
         # Remove rows with invalid prices
         df = df[(df['bid'] > 0) & (df['ask'] > 0)]
         
-        # Remove rows with inverted spreads
-        df = df[df['bid'] < df['ask']]
+        # Handle potentially inverted bid/ask spreads from dukascopy data
+        # If bid > ask, swap them (this can happen with dukascopy tick data)
+        inverted_mask = df['bid'] > df['ask']
+        if inverted_mask.any():
+            logger.info(f"Found {inverted_mask.sum()} ticks with inverted bid/ask, swapping them")
+            df.loc[inverted_mask, ['bid', 'ask']] = df.loc[inverted_mask, ['ask', 'bid']].values
         
         # Remove extreme spreads (> 100 pips)
         symbol = df['symbol'].iloc[0] if not df.empty else 'UNKNOWN'
@@ -237,7 +243,12 @@ class CSVDataLoader:
             DataFrame with interpolated data
         """
         if df.empty or not self.config.interpolate_missing_ticks:
+            # Add is_interpolated column for original data
+            df['is_interpolated'] = False
             return df
+        
+        # Add is_interpolated column to original data
+        df['is_interpolated'] = False
         
         interpolated_rows = []
         
@@ -286,10 +297,6 @@ class CSVDataLoader:
         if interpolated_rows:
             result_df = pd.DataFrame(interpolated_rows).reset_index(drop=True)
             
-            # Add is_interpolated column if not present
-            if 'is_interpolated' not in result_df.columns:
-                result_df['is_interpolated'] = False
-            
             original_count = len(df)
             interpolated_count = len(result_df) - original_count
             
@@ -311,8 +318,15 @@ class CSVDataLoader:
             Tick objects
         """
         for _, row in df.iterrows():
+            # Convert timezone-aware pandas timestamp to naive datetime for consistency
+            timestamp = row['timestamp']
+            if hasattr(timestamp, 'tz_convert'):
+                timestamp = timestamp.tz_convert('UTC').tz_localize(None)
+            elif hasattr(timestamp, 'tz_localize'):
+                timestamp = timestamp.tz_localize(None)
+            
             tick = Tick(
-                timestamp=row['timestamp'].to_pydatetime(),
+                timestamp=timestamp.to_pydatetime(),
                 symbol=row['symbol'],
                 bid=float(row['bid']),
                 ask=float(row['ask']),
@@ -359,7 +373,11 @@ class CSVDataLoader:
         combined_df = pd.concat(all_dataframes, ignore_index=True)
         
         # Filter by exact date range
-        mask = (combined_df['timestamp'] >= start_date) & (combined_df['timestamp'] <= end_date)
+        # Convert datetime objects to pandas Timestamp with UTC timezone for proper comparison
+        start_ts = pd.Timestamp(start_date, tz='UTC')
+        end_ts = pd.Timestamp(end_date, tz='UTC')
+        
+        mask = (combined_df['timestamp'] >= start_ts) & (combined_df['timestamp'] <= end_ts)
         filtered_df = combined_df[mask]
         
         if filtered_df.empty:

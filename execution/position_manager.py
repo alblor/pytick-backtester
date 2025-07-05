@@ -180,7 +180,7 @@ class PositionManager:
         if self.on_position_opened:
             self.on_position_opened(position)
         
-        logger.info(f"Opened position: {position.quantity} lots of {position.symbol} at {position.avg_price:.5f}")
+        logger.info(f"📊 Opened position: {position.quantity} lots of {position.symbol} at {position.avg_price:.5f}")
     
     def _add_to_position(self, position: Position, order: Order) -> None:
         """

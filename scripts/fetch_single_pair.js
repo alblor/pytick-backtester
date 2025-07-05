@@ -12,8 +12,8 @@ const path = require('path');
 // Configuration - modify these values as needed
 const CONFIG = {
   symbol: 'eurusd',           // Currency pair
-  startDate: '2024-01-02',    // Start date (more recent)
-  endDate: '2024-01-02',      // End date (same day for testing)
+  startDate: '2024-01-15',    // Start date (weekday)
+  endDate: '2024-01-15',      // End date (same day for testing)
   timeframe: 'm1',            // Start with m1 instead of tick
   outputDir: './data'         // Output directory
 };

@@ -134,7 +134,7 @@ class OrderManager:
             price=price,
             stop_loss=stop_loss,
             take_profit=take_profit,
-            created_at=datetime.now(),
+            created_at=datetime.now(),  # This will be updated with tick time during processing
             execution_delay=self.delay_model(Order(symbol=symbol, side=side, order_type=order_type, quantity=quantity))
         )
         
@@ -142,7 +142,7 @@ class OrderManager:
         self.orders[order.id] = order
         self.pending_orders[symbol].append(order)
         
-        logger.info(f"Created {order.order_type.value} order: {order.id} for {quantity} lots of {symbol}")
+        logger.info(f"📝 Created {order.order_type.value} order: {order.id} for {quantity} lots of {symbol} (SL: {stop_loss}, TP: {take_profit})")
         
         return order
     
@@ -232,12 +232,25 @@ class OrderManager:
         # Process pending orders for this symbol
         pending_symbol_orders = self.pending_orders[tick.symbol].copy()
         
+        if pending_symbol_orders:
+            logger.debug(f"⚡ Processing {len(pending_symbol_orders)} pending orders for {tick.symbol}")
+        
         for order in pending_symbol_orders:
+            # Fix timestamp issues: if order was created with system time, update to backtest time
+            if order.created_at > tick.timestamp:
+                logger.debug(f"🕐 Adjusting order creation time from {order.created_at} to {tick.timestamp}")
+                order.created_at = tick.timestamp
+                
+            logger.debug(f"🔍 Checking order {order.id}: {order.side.value} {order.quantity} {order.symbol} @ {order.order_type.value}")
+            
             if self._should_execute_order(order, tick):
+                logger.info(f"⚡ Executing order: {order.id}")
                 # Execute the order
                 executed_order = self._execute_order(order, tick)
                 if executed_order:
                     executed_orders.append(executed_order)
+            else:
+                logger.debug(f"⏸️ Order {order.id} not ready for execution")
         
         return executed_orders
     
@@ -255,28 +268,39 @@ class OrderManager:
         # Check if enough time has passed for execution delay
         time_since_created = (tick.timestamp - order.created_at).total_seconds()
         if time_since_created < order.execution_delay:
+            logger.debug(f"⏳ Order {order.id} waiting for execution delay: {time_since_created:.3f}s / {order.execution_delay:.3f}s")
             return False
         
         # Check execution conditions based on order type
         if order.order_type == OrderType.MARKET:
+            logger.debug(f"✅ Market order {order.id} ready for execution")
             return True
         
         elif order.order_type == OrderType.LIMIT:
             if order.side == OrderSide.BUY:
                 # Buy limit: execute when ask price <= limit price
-                return tick.ask <= order.price
+                can_execute = tick.ask <= order.price
+                logger.debug(f"{'✅' if can_execute else '❌'} Buy limit order {order.id}: ask={tick.ask:.5f} <= limit={order.price:.5f} = {can_execute}")
+                return can_execute
             else:
                 # Sell limit: execute when bid price >= limit price
-                return tick.bid >= order.price
+                can_execute = tick.bid >= order.price
+                logger.debug(f"{'✅' if can_execute else '❌'} Sell limit order {order.id}: bid={tick.bid:.5f} >= limit={order.price:.5f} = {can_execute}")
+                return can_execute
         
         elif order.order_type == OrderType.STOP:
             if order.side == OrderSide.BUY:
                 # Buy stop: execute when ask price >= stop price
-                return tick.ask >= order.price
+                can_execute = tick.ask >= order.price
+                logger.debug(f"{'✅' if can_execute else '❌'} Buy stop order {order.id}: ask={tick.ask:.5f} >= stop={order.price:.5f} = {can_execute}")
+                return can_execute
             else:
                 # Sell stop: execute when bid price <= stop price
-                return tick.bid <= order.price
+                can_execute = tick.bid <= order.price
+                logger.debug(f"{'✅' if can_execute else '❌'} Sell stop order {order.id}: bid={tick.bid:.5f} <= stop={order.price:.5f} = {can_execute}")
+                return can_execute
         
+        logger.debug(f"❌ Unknown order type: {order.order_type}")
         return False
     
     def _execute_order(self, order: Order, tick: Tick) -> Optional[Order]:
@@ -331,7 +355,7 @@ class OrderManager:
             if self.on_order_filled:
                 self.on_order_filled(order)
             
-            logger.info(f"Executed order: {order.id} at {execution_price:.5f} with {slippage:.1f} pips slippage")
+            logger.info(f"🎯 Executed order: {order.id} at {execution_price:.5f} with {slippage:.1f} pips slippage")
             
             return order
         
