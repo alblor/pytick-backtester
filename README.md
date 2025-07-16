@@ -3,7 +3,7 @@
 A comprehensive, enterprise-grade backtesting framework for algorithmic trading with tick-by-tick precision simulation. Built for professional forex strategy development and validation.
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.txt)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.txt)
 [![Framework: Professional](https://img.shields.io/badge/framework-enterprise--grade-green.svg)](#)
 
 ## 🚀 Key Features
@@ -240,7 +240,7 @@ This framework is designed for extension:
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.txt](LICENSE.txt) file for details.
 
 ## ⚠️ Disclaimer
 
