@@ -16,7 +16,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 from core.data_structures import BacktestConfig
 from engine.backtest_engine import BacktestEngine
 from strategy.strategy_interface import StrategyConfig
-from examples.moving_average_strategy import MovingAverageCrossoverStrategy
+from strategies.examples.moving_average_strategy import MovingAverageCrossoverStrategy
 from analysis.performance_analyzer import PerformanceAnalyzer
 from test_data_utils import TestDataManager
 

@@ -1,5 +1,4 @@
-"""Example strategies and usage demonstrations."""
+"""Example usage demonstrations and workflow scripts."""
 
-from .moving_average_strategy import MovingAverageCrossoverStrategy, MovingAverageRSIStrategy
-
-__all__ = ['MovingAverageCrossoverStrategy', 'MovingAverageRSIStrategy']
+# This module contains usage examples, not strategy implementations
+# Strategy implementations are located in the strategies/ directory
