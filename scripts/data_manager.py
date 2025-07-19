@@ -5,20 +5,21 @@ Data Management Utilities for the Backtesting Framework.
 Provides tools for downloading, validating, and managing tick data.
 """
 
-import sys
-import argparse
-import logging
-from datetime import datetime, timedelta
-from pathlib import Path
-import subprocess
+import os
 import json
+import subprocess
+from pathlib import Path
+from datetime import datetime, timedelta
+import logging
+import argparse
+import sys
+from typing import Tuple
 
 # Add backtester to path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from core.data_structures import BacktestConfig
 from data.data_loader_factory import DataLoaderFactory
-from analysis.performance_analyzer import PerformanceAnalyzer
 
 
 # Configure logging
@@ -334,6 +335,7 @@ class DataManager:
         logger.info(f"Data information exported to {output_path}")
 
 
+
 def main():
     """Command line interface for data management."""
     parser = argparse.ArgumentParser(description='Backtesting Framework Data Manager')
@@ -370,6 +372,7 @@ def main():
     # Export command
     export_parser = subparsers.add_parser('export', help='Export data information')
     export_parser.add_argument('output_file', help='Output file path')
+
     
     args = parser.parse_args()
     

@@ -1,28 +1,28 @@
 {
-  "downloadDate": "2025-07-05T14:42:27.719Z",
+  "downloadDate": "2025-07-19T10:49:25.482Z",
   "symbols": [
-    "gbpnzd"
+    "eurusd"
   ],
   "period": {
-    "start": "2025-07-03T00:00:00.000Z",
-    "end": "2025-07-05T00:00:00.000Z"
+    "start": "2025-07-17T00:00:00.000Z",
+    "end": "2025-07-19T00:00:00.000Z"
   },
   "timeframe": "tick",
-  "totalRecords": 145235,
-  "totalSizeBytes": 12455778,
+  "totalRecords": 116503,
+  "totalSizeBytes": 9734019,
   "symbolSummary": {
-    "GBPNZD": {
-      "records": 145235,
-      "size": 12455778,
+    "EURUSD": {
+      "records": 116503,
+      "size": 9734019,
       "files": 1
     }
   },
   "files": [
     {
-      "symbol": "GBPNZD",
-      "file": "GBPNZD_2025-07-03_2025-07-05_tick.csv",
-      "records": 145235,
-      "size": 12455778
+      "symbol": "EURUSD",
+      "file": "EURUSD_2025-07-17_2025-07-19_tick.csv",
+      "records": 116503,
+      "size": 9734019
     }
   ]
 }

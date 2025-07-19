@@ -395,3 +395,8 @@ claude_*.tmp
 
 # Claude Code project instructions
 CLAUDE.md
+
+# ==================================================================
+# Gemini Related Files (used for debugging and troubleshooting)
+# ==================================================================
+.gemini/
